@@ -1,18 +1,19 @@
 package com.forsakenecho.learning_management_system.controller;
 
-import com.forsakenecho.learning_management_system.dto.AuthResponse;
-import com.forsakenecho.learning_management_system.dto.LoginRequest;
-import com.forsakenecho.learning_management_system.dto.RegisterRequest;
+import com.forsakenecho.learning_management_system.dto.*;
 import com.forsakenecho.learning_management_system.entity.User;
 import com.forsakenecho.learning_management_system.jwt.JwtUtil;
 import com.forsakenecho.learning_management_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RequestMapping("/api/auth")
 @RestController
@@ -38,7 +39,20 @@ public class AuthController {
                 .build();
 
         userRepository.save(user);
-        return ResponseEntity.ok("User registered successfully");
+
+        UserResponse userResponse = UserResponse.builder()
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .build();
+
+        ApiResponse<UserResponse> response = ApiResponse.<UserResponse>builder()
+                .message("Tạo tài khoản thành công!")
+                .data(userResponse)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/login")

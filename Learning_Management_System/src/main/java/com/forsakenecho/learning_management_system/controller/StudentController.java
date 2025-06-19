@@ -1,6 +1,9 @@
 package com.forsakenecho.learning_management_system.controller;
 
+import com.forsakenecho.learning_management_system.dto.ApiResponse;
 import com.forsakenecho.learning_management_system.dto.PurchaseCourseRequest;
+import com.forsakenecho.learning_management_system.dto.PurchaseResponse;
+import com.forsakenecho.learning_management_system.dto.UserResponse;
 import com.forsakenecho.learning_management_system.entity.Course;
 import com.forsakenecho.learning_management_system.entity.CourseManagement;
 import com.forsakenecho.learning_management_system.entity.User;
@@ -13,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/student")
@@ -48,6 +53,19 @@ public class StudentController {
                 .build();
 
         courseManagementRepository.save(courseManagement);
-        return ResponseEntity.ok("Course purchased successfully");
+
+        PurchaseResponse purchaseResponse = PurchaseResponse.builder()
+                .studentId(student.getId())
+                .courseId(course.getId())
+                .purchasedAt(courseManagement.getPurchasedAt())
+                .build();
+
+        ApiResponse<PurchaseResponse> response = ApiResponse.<PurchaseResponse>builder()
+                .message("Mua khóa học thành công!")
+                .data(purchaseResponse)
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
     }
 }

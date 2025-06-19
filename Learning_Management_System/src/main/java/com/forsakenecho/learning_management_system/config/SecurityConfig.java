@@ -40,8 +40,7 @@ public class SecurityConfig {
                 .sessionManagement(sess ->
                         sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-        // Bạn KHÔNG CẦN thêm .authenticationProvider(authenticationProvider()) ở đây nếu bạn đã định nghĩa Bean đó.
-        // Spring sẽ tự động tìm các AuthenticationProvider đã được định nghĩa là Bean.
+
         return http.build();
     }
 
@@ -50,7 +49,7 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Đảm bảo rằng authenticationManager này sử dụng provider mà bạn đã định nghĩa
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
@@ -60,8 +59,8 @@ public class SecurityConfig {
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService); // <-- Sử dụng UserDetailsService đã inject
-        authProvider.setPasswordEncoder(passwordEncoder());    // <-- Sử dụng PasswordEncoder đã định nghĩa
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 }

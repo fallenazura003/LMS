@@ -6,7 +6,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -31,4 +33,9 @@ public class CourseManagement {
 
     @Enumerated(EnumType.STRING)
     private CourseAccessType accessType; // PURCHASED OR CREATED
+
+    @CreationTimestamp
+    @Column(name = "purchased_at", updatable = false)
+    private LocalDateTime purchasedAt;
+
 }
