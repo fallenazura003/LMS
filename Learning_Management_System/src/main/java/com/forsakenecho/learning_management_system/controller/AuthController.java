@@ -2,6 +2,7 @@ package com.forsakenecho.learning_management_system.controller;
 
 import com.forsakenecho.learning_management_system.dto.*;
 import com.forsakenecho.learning_management_system.entity.User;
+import com.forsakenecho.learning_management_system.enums.Status;
 import com.forsakenecho.learning_management_system.jwt.JwtUtil;
 import com.forsakenecho.learning_management_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class AuthController {
                 .email(registerRequest.getEmail())
                 .password(passwordEncoder.encode(registerRequest.getPassword()))
                 .role(registerRequest.getRole())
+                .status(Status.valueOf("ACTIVE"))
                 .build();
 
         userRepository.save(user);
@@ -65,7 +67,7 @@ public class AuthController {
         User user = userRepository.findByEmail(loginRequest.getEmail()).orElseThrow();
         String token = jwtUtil.generateToken(user);
 
-        return ResponseEntity.ok(new AuthResponse(token, user.getRole().name()));
+        return ResponseEntity.ok(new AuthResponse(token, user.getRole().name(),user.getStatus().name()));
     }
 
     @GetMapping("/me")

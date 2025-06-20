@@ -1,6 +1,7 @@
 package com.forsakenecho.learning_management_system.entity;
 
 import com.forsakenecho.learning_management_system.enums.Role;
+import com.forsakenecho.learning_management_system.enums.Status;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -34,6 +35,9 @@ public class User implements UserDetails {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
     @CreationTimestamp
     @Column(updatable = false)
