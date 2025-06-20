@@ -27,6 +27,7 @@ public class StudentController {
     private final CourseRepository courseRepository;
     private final CourseManagementRepository courseManagementRepository;
 
+    // TODO: sửa lại để trả về theo ApiResponse
     @GetMapping("/courses")
     public ResponseEntity<?> getPurchasedCourses(Authentication authentication) {
         User user = (User) authentication.getPrincipal();

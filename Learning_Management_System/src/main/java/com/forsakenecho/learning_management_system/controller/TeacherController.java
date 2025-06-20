@@ -27,6 +27,8 @@ public class TeacherController {
     private final CourseRepository courseRepository;
     private final CourseManagementRepository courseManagementRepository;
 
+
+    // TODO: sửa lại để trả về theo ApiResponse
     @GetMapping("/courses")
     public ResponseEntity<?> getCreatedCourses(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
