@@ -47,4 +47,14 @@ public class Course {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    private boolean visible = true;
+
+    public String getVisibility(){
+        if(this.visible){
+            return "VISIBLE";
+        }
+        return "INVISIBLE";
+    }
+
 }

@@ -21,6 +21,8 @@ public class CourseResponse {
     private String creatorName;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private boolean visible;
+
 
     public static CourseResponse from(Course course) {
         return CourseResponse.builder()
@@ -31,6 +33,7 @@ public class CourseResponse {
                 .creatorName(course.getCreator().getName()) // hoặc getUsername()
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
+                .visible(course.isVisible())
                 .build();
     }
 }
