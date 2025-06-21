@@ -1,7 +1,12 @@
 package com.forsakenecho.learning_management_system.jwt;
 
-import com.forsakenecho.learning_management_system.repository.UserRepository;
+// ... các imports khác
+import com.forsakenecho.learning_management_system.repository.BlacklistedTokenRepository;
+// Đảm bảo import đúng các lớp ngoại lệ của JJWT
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,55 +15,72 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
+
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final UserDetailsService userDetailsService;
+    private final BlacklistedTokenRepository blacklistedTokenRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-
         final String authorizationHeader = request.getHeader("Authorization");
-        final String jwtToken;
-        final String userEmail;
 
-        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response); // Không có token thì cho qua nếu route permitAll
-            return;
-        }
+        String username = null;
+        String jwt = null;
 
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            jwt = authorizationHeader.substring(7);
 
-        jwtToken = authorizationHeader.substring(7); // remove Bearer
-        try {
-            userEmail = jwtUtil.extractUsername(jwtToken);
-        } catch (ExpiredJwtException e) {
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Token is expired");
-            return;
-        } catch (Exception e) {
-            filterChain.doFilter(request,response);
-            return;
-        }
+            // Bước kiểm tra Blacklist
+            // Sử dụng hash của token để kiểm tra nếu bạn đã lưu hash
+            String tokenToCheck = jwtUtil.hashToken(jwt); // Nếu bạn lưu hash
+            // String tokenToCheck = jwt; // Nếu bạn lưu toàn bộ token
 
-        if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails user = userRepository.findByEmail(userEmail).orElse(null);
-            if (user != null && jwtUtil.isTokenValid(jwtToken, user)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        user, null, user.getAuthorities()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            if (blacklistedTokenRepository.existsByTokenHash(tokenToCheck)) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token is blacklisted");
+                return; // Ngừng xử lý request nếu token nằm trong blacklist
+            }
+
+            try {
+                username = jwtUtil.extractUsername(jwt);
+            } catch (SignatureException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException e) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid JWT Token: " + e.getMessage());
+                return;
+            } catch (ExpiredJwtException e) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "JWT Token has expired");
+                return;
             }
         }
-        filterChain.doFilter(request,response);
+
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+
+            // Kiểm tra tính hợp lệ của token (username khớp và chưa hết hạn)
+            // Lưu ý: isTokenValid() của bạn đã bao gồm kiểm tra hết hạn, nhưng chúng ta đã kiểm tra ExpiredJwtException ở trên.
+            // Có thể đơn giản hóa isTokenValid() chỉ kiểm tra username.
+            if (jwtUtil.isTokenValid(jwt, userDetails)) { // jwtUtil.isTokenValid() của bạn đã kiểm tra cả username và hết hạn
+                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                usernamePasswordAuthenticationToken
+                        .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+            } else {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token for user details or already expired");
+                return;
+            }
+        }
+        filterChain.doFilter(request, response);
     }
 }
