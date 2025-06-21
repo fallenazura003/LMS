@@ -1,17 +1,22 @@
 package com.forsakenecho.learning_management_system.controller;
 
 import com.forsakenecho.learning_management_system.dto.CourseResponse;
+import com.forsakenecho.learning_management_system.dto.RegisterRequest;
 import com.forsakenecho.learning_management_system.entity.Course;
+import com.forsakenecho.learning_management_system.entity.Event;
 import com.forsakenecho.learning_management_system.entity.User;
 import com.forsakenecho.learning_management_system.enums.Status;
 import com.forsakenecho.learning_management_system.repository.CourseManagementRepository;
 import com.forsakenecho.learning_management_system.repository.CourseRepository;
+import com.forsakenecho.learning_management_system.repository.EventRepository;
 import com.forsakenecho.learning_management_system.repository.UserRepository;
-import com.forsakenecho.learning_management_system.service.CourseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -21,6 +26,9 @@ public class AdminController {
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
     private final CourseManagementRepository courseManagementRepository;
+    private final AuthController authController;
+    private final EventRepository eventRepository;
+
 
     @GetMapping("/dashboard")
     public ResponseEntity<?> dashboardStats() {
@@ -43,35 +51,88 @@ public class AdminController {
         return ResponseEntity.ok(users);
     }
 
-    // Cập nhật status của người dùng
-    @PutMapping("/users/{id}/status")
-    public ResponseEntity<?> updateUserStatus(@PathVariable("id") String id, @RequestParam("status") Status status) {
-        Optional<User> optionalUser = userRepository.findById(UUID.fromString(id));
-        if (optionalUser.isEmpty()) {
-            return ResponseEntity.badRequest().body("User not found");
-        }
+    // tạo mới người dùng
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/users")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request, Authentication authentication) {
+        User currentUser = (User) authentication.getPrincipal();
 
-        User user = optionalUser.get();
-        user.setStatus(status);
-        userRepository.save(user);
-
-        return ResponseEntity.ok("User status updated");
+        eventRepository.save(Event.builder()
+                .action("Tạo mới user: " + request.getEmail())
+                .performedBy(currentUser.getName()) // hoặc getEmail() nếu muốn
+                .timestamp(LocalDateTime.now())
+                .build());
+        return authController.register(request);
     }
 
+    // Update user
+    @PutMapping("/users/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable UUID id, @RequestBody User updatedUser, Authentication authentication) {
+        User user = userRepository.findById(id).orElseThrow();
+        user.setEmail(updatedUser.getEmail());
+        user.setRole(updatedUser.getRole());
+        userRepository.save(user);
+
+        User currentUser = (User) authentication.getPrincipal();
+
+        eventRepository.save(Event.builder()
+                .action("Cập nhật user: " + updatedUser.getEmail())
+                .performedBy(currentUser.getName()) // hoặc getEmail() nếu muốn
+                .timestamp(LocalDateTime.now())
+                .build());
+        return ResponseEntity.ok("Updated");
+    }
+
+
+    // sửa status
+    @PatchMapping("/users/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> toggleUserStatus(@PathVariable UUID id, Authentication authentication) {
+        User user = userRepository.findById(id).orElseThrow();
+        if (user.getStatus() == Status.ACTIVE) {
+            user.setStatus(Status.BLOCKED);
+        } else {
+            user.setStatus(Status.ACTIVE);
+        }
+        userRepository.save(user);
+
+        User currentUser = (User) authentication.getPrincipal();
+
+        eventRepository.save(Event.builder()
+                .action("Cập nhật trạng thái user: " + user.getEmail() +" " +user.getStatus())
+                .performedBy(currentUser.getName()) // hoặc getEmail() nếu muốn
+                .timestamp(LocalDateTime.now())
+                .build());
+        return ResponseEntity.ok("Status updated");
+    }
+
+    // lấy tất cả course
     @GetMapping("/courses")
     public ResponseEntity<List<CourseResponse>> getAllCourses() {
         List<Course> courses = courseRepository.findAll();
         return ResponseEntity.ok(courses.stream().map(CourseResponse::from).toList());
     }
 
+    // ẩn khóa học
+    @PutMapping("/courses/{id}/visibility")
+    public ResponseEntity<?> toggleCourseVisibility(@PathVariable UUID id, Authentication authentication) {
+        Course course = courseRepository.findById(id).orElseThrow(() -> new RuntimeException("Course not found"));
+        course.setVisible(!course.isVisible());
+        courseRepository.save(course);
+        User currentUser = (User) authentication.getPrincipal();
+
+        eventRepository.save(Event.builder()
+                .action("Cập nhật course: " + course.getTitle() + " "+course.getVisibility())
+                .performedBy(currentUser.getName()) // hoặc getEmail() nếu muốn
+                .timestamp(LocalDateTime.now())
+                .build());
+        return ResponseEntity.ok("Visibility updated");
+    }
+
     // Tạm thời mock log
     @GetMapping("/logs")
-    public ResponseEntity<List<String>> getLogs() {
-        List<String> logs = List.of(
-                "2025-06-19 21:01: User A registered",
-                "2025-06-19 21:05: Teacher B created course X",
-                "2025-06-19 21:10: Student C purchased course X"
-        );
+    public ResponseEntity<List<Event>> getAllLogs() {
+        List<Event> logs = eventRepository.findAll();
         return ResponseEntity.ok(logs);
     }
 }

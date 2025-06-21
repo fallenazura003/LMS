@@ -13,4 +13,6 @@ public interface CourseManagementRepository extends JpaRepository<CourseManageme
     List<CourseManagement> findByUserIdAndAccessType(UUID userId, CourseAccessType accessType);
     Optional<CourseManagement> findByUserIdAndCourseIdAndAccessType(UUID userId, UUID courseId, CourseAccessType accessType);
 
+
+
 }
