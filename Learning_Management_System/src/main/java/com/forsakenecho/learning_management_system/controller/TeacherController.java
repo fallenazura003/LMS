@@ -53,12 +53,6 @@ public class TeacherController {
             @RequestPart(value = "imageUrl", required = false) String externalImageUrl, // String cho URL từ mạng
             Authentication authentication
     ) throws IOException {
-        System.out.println("Entering createCourse method.");
-        System.out.println("Received title: " + title);
-        System.out.println("Received description: " + description);
-        System.out.println("Received price: " + price);
-        System.out.println("Received imageFile (is empty?): " + (imageFile == null || imageFile.isEmpty()));
-        System.out.println("Received externalImageUrl: " + externalImageUrl);
 
         User teacher = (User) authentication.getPrincipal();
         String finalImageUrl = null;
@@ -85,6 +79,7 @@ public class TeacherController {
                 .price(price)
                 .imageUrl(finalImageUrl)
                 .creator(teacher)
+                .visible(true)
                 .build();
 
         courseRepository.save(course);

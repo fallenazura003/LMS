@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -29,6 +30,7 @@ public class AdminController {
     private final AuthController authController;
     private final EventRepository eventRepository;
 
+    private final PasswordEncoder passwordEncoder;
 
     @GetMapping("/dashboard")
     public ResponseEntity<?> dashboardStats() {
@@ -71,6 +73,10 @@ public class AdminController {
         User user = userRepository.findById(id).orElseThrow();
         user.setEmail(updatedUser.getEmail());
         user.setRole(updatedUser.getRole());
+        // CHỈ CẬP NHẬT MẬT KHẨU NẾU NÓ ĐƯỢC CUNG CẤP VÀ KHÔNG RỖNG
+        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(updatedUser.getPassword())); // <-- MÃ HÓA MẬT KHẨU MỚI
+        }
         userRepository.save(user);
 
         User currentUser = (User) authentication.getPrincipal();
