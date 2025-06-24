@@ -19,6 +19,7 @@ public class CourseResponse {
     private String description;
     private Double price;
     private String creatorName;
+    private String imageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean visible;
@@ -31,6 +32,7 @@ public class CourseResponse {
                 .description(course.getDescription())
                 .price(course.getPrice())
                 .creatorName(course.getCreator().getName()) // hoặc getUsername()
+                .imageUrl(course.getImageUrl())
                 .createdAt(course.getCreatedAt())
                 .updatedAt(course.getUpdatedAt())
                 .visible(course.isVisible())

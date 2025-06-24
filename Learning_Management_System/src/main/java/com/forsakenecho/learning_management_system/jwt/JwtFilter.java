@@ -76,6 +76,8 @@ public class JwtFilter extends OncePerRequestFilter {
                 usernamePasswordAuthenticationToken
                         .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                System.out.println("User authenticated: " + userDetails.getUsername());
+                System.out.println("Authorities set: " + userDetails.getAuthorities());
             } else {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token for user details or already expired");
                 return;

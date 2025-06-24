@@ -132,7 +132,7 @@ public class AdminController {
     // Tạm thời mock log
     @GetMapping("/logs")
     public ResponseEntity<List<Event>> getAllLogs() {
-        List<Event> logs = eventRepository.findAll();
+        List<Event> logs = eventRepository.findAllByOrderByTimestampDesc();
         return ResponseEntity.ok(logs);
     }
 }
