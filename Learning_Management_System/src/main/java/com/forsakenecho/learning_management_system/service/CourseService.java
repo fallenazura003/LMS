@@ -28,6 +28,7 @@ public class CourseService {
                         .description(c.getDescription())
                         .price(c.getPrice())
                         .creatorName(c.getCreator().getName())
+                        .imageUrl(c.getImageUrl())
                         .build()
                 )
                 .collect(Collectors.toList());

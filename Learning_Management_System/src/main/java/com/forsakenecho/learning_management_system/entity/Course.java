@@ -40,6 +40,8 @@ public class Course {
 
     private Double price;
 
+    private String imageUrl;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
