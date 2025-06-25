@@ -1,5 +1,6 @@
 package com.forsakenecho.learning_management_system.entity;
 
+import com.forsakenecho.learning_management_system.enums.CourseCategory;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,6 +29,10 @@ public class Course {
     private String title;
     private String description;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CourseCategory category;
+
     @ManyToOne
     @JoinColumn(name = "creator_id")
     private User creator;
@@ -41,6 +46,8 @@ public class Course {
     private Double price;
 
     private String imageUrl;
+
+
 
     @CreationTimestamp
     @Column(updatable = false)
