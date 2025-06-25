@@ -1,6 +1,7 @@
 package com.forsakenecho.learning_management_system.dto;
 
 import com.forsakenecho.learning_management_system.entity.Course;
+import com.forsakenecho.learning_management_system.enums.CourseCategory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,7 @@ public class CourseResponse {
     private String title;
     private String description;
     private Double price;
+    private CourseCategory category;
     private String creatorName;
     private String imageUrl;
     private LocalDateTime createdAt;
@@ -31,6 +33,7 @@ public class CourseResponse {
                 .title(course.getTitle())
                 .description(course.getDescription())
                 .price(course.getPrice())
+                .category(course.getCategory())
                 .creatorName(course.getCreator().getName()) // hoặc getUsername()
                 .imageUrl(course.getImageUrl())
                 .createdAt(course.getCreatedAt())
