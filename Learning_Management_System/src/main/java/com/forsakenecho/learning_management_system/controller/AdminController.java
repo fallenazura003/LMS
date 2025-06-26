@@ -11,6 +11,9 @@ import com.forsakenecho.learning_management_system.repository.CourseRepository;
 import com.forsakenecho.learning_management_system.repository.EventRepository;
 import com.forsakenecho.learning_management_system.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -48,9 +51,13 @@ public class AdminController {
 
     // Lấy tất cả người dùng (student & teacher)
     @GetMapping("/users")
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userRepository.findByRoleIn(List.of("STUDENT", "TEACHER"));
-        return ResponseEntity.ok(users);
+    public ResponseEntity<?> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<User> userPage = userRepository.findByRoleIn(List.of("STUDENT", "TEACHER"), pageable);
+        return ResponseEntity.ok(userPage); // Trả về Page<User>
     }
 
     // tạo mới người dùng
@@ -114,9 +121,13 @@ public class AdminController {
 
     // lấy tất cả course
     @GetMapping("/courses")
-    public ResponseEntity<List<CourseResponse>> getAllCourses() {
-        List<Course> courses = courseRepository.findAll();
-        return ResponseEntity.ok(courses.stream().map(CourseResponse::from).toList());
+    public ResponseEntity<?> getAllCourses(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Course> coursePage = courseRepository.findAll(pageable);
+        Page<CourseResponse> response = coursePage.map(CourseResponse::from);
+        return ResponseEntity.ok(response);
     }
 
     // ẩn khóa học
@@ -135,10 +146,14 @@ public class AdminController {
         return ResponseEntity.ok("Visibility updated");
     }
 
-    // Tạm thời mock log
+    // Quản lý log
     @GetMapping("/logs")
-    public ResponseEntity<List<Event>> getAllLogs() {
-        List<Event> logs = eventRepository.findAllByOrderByTimestampDesc();
-        return ResponseEntity.ok(logs);
+    public ResponseEntity<?> getAllLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Event> logPage = eventRepository.findAllByOrderByTimestampDesc(pageable);
+        return ResponseEntity.ok(logPage);
     }
 }
