@@ -20,6 +20,9 @@ import com.forsakenecho.learning_management_system.service.CourseService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -48,9 +51,15 @@ public class TeacherController {
 
     // ✅ 1. API lấy danh sách khóa học do giáo viên tạo
     @GetMapping("/courses")
-    public ResponseEntity<?> getCreatedCourses(Authentication authentication) {
+    public ResponseEntity<?> getCreatedCourses(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size) {
         User user = (User) authentication.getPrincipal();
-        return ResponseEntity.ok(courseService.getCoursesByUserAndAccessType(user.getId(), CourseAccessType.CREATED));
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Course> courses = courseService.getCoursesByUserAndAccessType(user.getId(), CourseAccessType.CREATED, pageable);
+        Page<CourseResponse> response = courses.map(CourseResponse::from);
+        return ResponseEntity.ok(response);
     }
 
     // ✅ 2. API tạo khóa học

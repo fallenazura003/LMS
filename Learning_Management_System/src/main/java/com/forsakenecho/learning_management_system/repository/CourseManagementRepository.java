@@ -2,6 +2,8 @@ package com.forsakenecho.learning_management_system.repository;
 
 import com.forsakenecho.learning_management_system.entity.CourseManagement;
 import com.forsakenecho.learning_management_system.enums.CourseAccessType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;
@@ -13,6 +15,7 @@ public interface CourseManagementRepository extends JpaRepository<CourseManageme
     List<CourseManagement> findByUserIdAndAccessType(UUID userId, CourseAccessType accessType);
     Optional<CourseManagement> findByUserIdAndCourseIdAndAccessType(UUID userId, UUID courseId, CourseAccessType accessType);
 
+    Page<CourseManagement> findByUserIdAndAccessType(UUID userId, CourseAccessType accessType, Pageable pageable);
 
 
 }

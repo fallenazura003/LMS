@@ -9,6 +9,9 @@ import com.forsakenecho.learning_management_system.repository.CourseManagementRe
 import com.forsakenecho.learning_management_system.repository.CourseRepository;
 import com.forsakenecho.learning_management_system.service.CourseService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,10 +33,17 @@ public class StudentController {
 
     // ✅ Lấy danh sách khóa học đã mua
     @GetMapping("/courses")
-    public ResponseEntity<?> getPurchasedCourses(Authentication authentication) {
+    public ResponseEntity<?> getPurchasedCourses(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size) {
         User user = (User) authentication.getPrincipal();
-        return ResponseEntity.ok(courseService.getCoursesByUserAndAccessType(user.getId(), CourseAccessType.PURCHASED));
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Course> courses = courseService.getCoursesByUserAndAccessType(user.getId(), CourseAccessType.PURCHASED, pageable);
+        Page<CourseResponse> response = courses.map(CourseResponse::from);
+        return ResponseEntity.ok(response);
     }
+
 
     // ✅ Mua khóa học
     @PostMapping("/purchase")
@@ -94,21 +104,20 @@ public class StudentController {
     // ✅ Lấy danh sách khóa học đang visible nhưng học sinh CHƯA mua (explore)
     @GetMapping("/explore")
     @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<?> getVisibleCoursesNotPurchased(Authentication authentication) {
+    public ResponseEntity<?> getVisibleCoursesNotPurchased(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "8") int size
+    ) {
         User student = (User) authentication.getPrincipal();
-        List<Course> allVisible = courseRepository.findByVisibleTrue();
+        Pageable pageable = PageRequest.of(page, size);
 
-        List<UUID> purchasedIds = courseManagementRepository
-                .findByUserIdAndAccessType(student.getId(), CourseAccessType.PURCHASED)
-                .stream()
-                .map(cm -> cm.getCourse().getId())
-                .toList();
+        Page<Course> pagedCourses = courseService.getVisibleCoursesNotPurchased(student.getId(), pageable);
 
-        List<Course> notPurchased = allVisible.stream()
-                .filter(course -> !purchasedIds.contains(course.getId()))
-                .toList();
+        // Trả về Page<CourseResponse> để frontend biết tổng số trang, v.v.
+        Page<CourseResponse> responsePage = pagedCourses.map(CourseResponse::from);
 
-        return ResponseEntity.ok(notPurchased.stream().map(CourseResponse::from).toList());
+        return ResponseEntity.ok(responsePage);
     }
 
     // ✅ Kiểm tra học sinh đã mua một khóa học cụ thể chưa
